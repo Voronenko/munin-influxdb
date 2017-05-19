@@ -13,11 +13,22 @@ import requests
 class Query:
     DEFAULT_FUNC = "mean"
 
-    def __init__(self, measurement, field):
+    def __init__(self, measurement, field, limit_to_domain=None):
         self.func = Query.DEFAULT_FUNC
         self.measurement = measurement
         self.field = field
         self.alias = self.field
+        self.limit_to_domain = limit_to_domain
+
+    def returnQueryCriteria(self):
+        result = []
+        if self.limit_to_domain:
+            result = [{
+                "key": "domain",
+                "operator": "=",
+                "value": self.limit_to_domain
+            }]
+        return result
 
     def to_json(self, settings):
         return {
@@ -31,12 +42,13 @@ class Query:
                 {"params": ["5m"], "type": "time"},
                 {"params": ["null"], "type": "fill"}
             ],
+            "tags": self.returnQueryCriteria(),
             "resultFormat": "time_series",
             "alias": self.alias
         }
 
 class Panel:
-    def __init__(self, title="", measurement=None):
+    def __init__(self, title="", measurement=None, limit_to_domain=None):
         self.title = title
         self.measurement = measurement
         self.queries = []
@@ -48,9 +60,10 @@ class Panel:
         self.thresholds = {}
         self.width = 6
         self.linewidth = 1
+        self.limit_to_domain=limit_to_domain
 
     def add_query(self, field):
-        query = Query(self.measurement, field)
+        query = Query(self.measurement, field, self.limit_to_domain)
         self.queries.append(query)
         return query
 
@@ -321,7 +334,7 @@ Note: This content was automatically generated.
                 row = self.add_row("{0} / {1}".format(domain, host))
                 for plugin in self.settings.domains[domain].hosts[host].plugins:
                     _plugin = self.settings.domains[domain].hosts[host].plugins[plugin]
-                    panel = row.add_panel(_plugin.settings["graph_title"] or plugin, plugin)
+                    panel = row.add_panel(_plugin.settings["graph_title"] or plugin, plugin, limit_to_domain=limit_to_domain)
 
                     for field in _plugin.fields:
                         query = panel.add_query(field)
