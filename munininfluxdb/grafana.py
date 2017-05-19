@@ -28,7 +28,7 @@ class Query:
                 {"params": [], "type": self.func}
             ]],
             "groupBy": [
-                {"params": ["$interval"], "type": "time"},
+                {"params": ["5m"], "type": "time"},
                 {"params": ["null"], "type": "fill"}
             ],
             "resultFormat": "time_series",
