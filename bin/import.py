@@ -95,6 +95,7 @@ def main(args):
 
                 if settings.interactive and not settings_asked:
                     dashboard.prompt_setup()
+                    settings_asked = True
 
                 dashboard.generate(limit_to_domain=domain)
 
