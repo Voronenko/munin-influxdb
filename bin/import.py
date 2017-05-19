@@ -82,28 +82,64 @@ def main(args):
     if settings.interactive:
         settings.grafana['create'] = (raw_input("Would you like to generate a Grafana dashboard? [y]/n: ") or "y") in ('y', 'Y')
 
+        if settings.grafana['create']:
+            dashboard_per_host = raw_input("  Generate dashboard per host ? [y]/n: ").strip() or "y"
+            settings.grafana['dashboard_per_host'] = dashboard_per_host in ("y", "Y")
+
+
     if settings.grafana['create']:
-        dashboard = Dashboard(settings)
-        if settings.interactive:
-            dashboard.prompt_setup()
+        if settings.grafana['dashboard_per_host']:
+            settings_asked = False
+            for domain in settings.domains:
+                dashboard = Dashboard(settings, domain)
 
-        dashboard.generate()
+                if settings.interactive and not settings_asked:
+                    dashboard.prompt_setup()
+                    settings_asked = True
 
-        if settings.grafana['host']:
-            try:
-                dash_url = dashboard.upload()
-            except Exception as e:
-                print("{0} Didn't quite work uploading: {1}".format(Symbol.NOK_RED, e))
-            else:
-                print("{0} A Grafana dashboard has been successfully uploaded to {1}".format(Symbol.OK_GREEN, dash_url))
+                dashboard.generate(limit_to_domain=domain)
 
-        if settings.grafana['filename']:
-            try:
-                dashboard.save()
-            except Exception as e:
-                print("{0} Could not write Grafana dashboard: {1}".format(Symbol.NOK_RED, e))
-            else:
-                print("{0} A Grafana dashboard has been successfully generated to {1}".format(Symbol.OK_GREEN, settings.grafana['filename']))
+                if settings.grafana['host']:
+                    try:
+                        dash_url = dashboard.upload()
+                    except Exception as e:
+                        print("{0} Didn't quite work uploading: {1}".format(Symbol.NOK_RED, e))
+                    else:
+                        print("{0} A Grafana dashboard has been successfully uploaded to {1}".format(Symbol.OK_GREEN, dash_url))
+
+                if settings.grafana['filename']:
+                    try:
+                        dashboard.save("dashboard-{0}".format(domain))
+                    except Exception as e:
+                        print("{0} Could not write Grafana dashboard: {1}".format(Symbol.NOK_RED, e))
+                    else:
+                        print("{0} A Grafana dashboard has been successfully generated to {1}".format(Symbol.OK_GREEN, settings.grafana['filename']))
+
+
+
+        else:
+            dashboard = Dashboard(settings)
+            if settings.interactive:
+                dashboard.prompt_setup()
+
+            dashboard.generate()
+
+            if settings.grafana['host']:
+                try:
+                    dash_url = dashboard.upload()
+                except Exception as e:
+                    print("{0} Didn't quite work uploading: {1}".format(Symbol.NOK_RED, e))
+                else:
+                    print("{0} A Grafana dashboard has been successfully uploaded to {1}".format(Symbol.OK_GREEN, dash_url))
+
+            if settings.grafana['filename']:
+                try:
+                    dashboard.save()
+                except Exception as e:
+                    print("{0} Could not write Grafana dashboard: {1}".format(Symbol.NOK_RED, e))
+                else:
+                    print("{0} A Grafana dashboard has been successfully generated to {1}".format(Symbol.OK_GREEN, settings.grafana['filename']))
+
     else:
         print("Then we're good! Have a nice day!")
 

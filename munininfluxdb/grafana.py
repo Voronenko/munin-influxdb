@@ -187,11 +187,7 @@ class HeaderPanel(Panel):
             "type": "text",
             "editable": True,
             "span": 12,
-            "links": [{
-                "type": "absolute",
-                "title": "Fork me on GitHub!",
-                "url": "https://github.com/mvonthron/munin-influxdb",
-            }],
+            "links": [],
             "content": self.content
         }
 
@@ -216,8 +212,8 @@ class Row:
         }
 
 class Dashboard:
-    def __init__(self, settings):
-        self.title = settings.grafana['title']
+    def __init__(self, settings, title):
+        self.title = title or settings.grafana['title']
         self.tags = settings.grafana['tags']
         self.rows = []
         self.settings = settings
@@ -257,10 +253,7 @@ class Dashboard:
         panel = HeaderPanel("Welcome to your new dashboard!")
         content = \
 '''
-<a href=\"https://github.com/mvonthron/munin-influxdb\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67\" alt=\"Fork me on GitHub\" data-canonical-src =\"https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png\"></a>
-
-<p>Thanks for using Munin-InfluxDB and the Grafana generator.</p>
-
+Note: This content was automatically generated.
 <ul>
 <li>Edit the panels so they match your desires by clicking on their titles</li>
 <li>You can remove this header through the green menu button on the top right corner of this panel</li>
@@ -284,7 +277,7 @@ class Dashboard:
             "tags": self.tags,
             "rows": [row.to_json(settings) for row in self.rows],
             "timezone": "browser",
-            "time": {"from": "now-5d", "to": "now"},
+            "time": {"from": "now-1d", "to": "now"},
         }
 
     def save(self, filename=None):
@@ -316,12 +309,14 @@ class Dashboard:
 
         return dashboard
 
-    def generate(self):
+    def generate(self, limit_to_domain=None):
         progress_bar = ProgressBar(self.settings.nb_rrd_files)
 
         self.add_header(self.settings)
 
         for domain in self.settings.domains:
+            if limit_to_domain and domain != limit_to_domain:
+                continue
             for host in self.settings.domains[domain].hosts:
                 row = self.add_row("{0} / {1}".format(domain, host))
                 for plugin in self.settings.domains[domain].hosts[host].plugins:
